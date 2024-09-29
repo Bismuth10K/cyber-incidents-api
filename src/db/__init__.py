@@ -1,5 +1,7 @@
 import sqlite3
 import utils
+import pandas as pd
+import re
 
 
 def get_db_connexion():
@@ -44,8 +46,10 @@ def transform_csv(old_csv_file_name, new_csv_file_name):
     new_csv_file_name
         Name of the new CSV file
     """
-    # TODO
-    pass
+    df = pd.read_csv(old_csv_file_name)
+    df[["type of response", "source of response"]] = df["Response"].str.split("   ", n=1, expand=True)
+    df["Attackers confirmed"] = df["Affiliations"].str.contains(r"\ABelieved")
+    df.to_csv(new_csv_file_name)
 
 
 def create_database(cursor, conn):
