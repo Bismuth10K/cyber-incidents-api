@@ -2,6 +2,7 @@ import sqlite3
 import utils
 import pandas as pd
 import re
+import numpy as np
 
 
 def get_db_connexion():
@@ -48,7 +49,7 @@ def transform_csv(old_csv_file_name, new_csv_file_name):
     """
     df = pd.read_csv(old_csv_file_name)
     df[["type of response", "source of response"]] = df["Response"].str.split("   ", n=1, expand=True)
-    df["Attackers confirmed"] = df["Affiliations"].str.contains(r"\ABelieved")
+    df["Attackers confirmed"] = not np.any(df["Affiliations"].str.contains(r"\ABelieved"))
     df.to_csv(new_csv_file_name)
 
 

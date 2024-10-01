@@ -22,8 +22,12 @@ def load_config():
     # The dictionary to return.
     config = {}
 
-    # TODO: WRITE HERE THE CODE OF THE FUNCTION
-
+    with open(CONFIG_FILE, "r") as f:
+        line = f.readline()
+        while line:
+            key, value = line.split(",")
+            config[key] = value.strip()
+            line = f.readline()
     return config
 
 
