@@ -107,8 +107,59 @@ def create_database(cursor, conn):
                 password BINARY(256)
             );
             """,
+        "Response":"""
+            CREATE TABLE IF NOT EXISTS Response(
+                 id_resp INTEGER PRIMARY KEY,
+                 type_response TEXT,
+                 source_info TEXT
+            );
+            """,
+        "Victims":"""
+            CREATE TABLE IF NOT EXISTS Victims(
+                id_victims INTEGER PRIMARY KEY,
+                name TEXT,
+                sector TEXT
+            );
+            """,
+        "Group_attackers":"""
+            CREATE TABLE IF NOT EXISTS Group_attackers(
+                id_group INTEGER PRIMARY KEY,
+                name TEXT,
+                country TEXT,
+                sponsored TEXT
+             );
+            """,
+        "Attack_victims":"""
+            CREATE TABLE IF NOT EXISTS Attack_victims(
+                id_att INTEGER,
+                id_vic INTEGER,
+                FOREIGN KEY (id_att) REFERENCES Attacks (id_attack)
+                FOREIGN KEY (id_vic) REFERENCES Victims (id_victims)
+             );
+            """,
+        "Attacks":"""
+            CREATE TABLE IF NOT EXISTS Attacks(
+                id_attack INTEGER PRIMARY KEY,
+                date TEXT,
+                title TEXT,
+                source_information TEXT,
+                attackers_confirmed TEXT,
+                username_agent TEXT,
+                id_group_attackers INTEGER,
+                id_response INTEGER,
+                FOREIGN KEY (username_agent) REFERENCES Agent(username)
+                FOREIGN KEY (id_group_attackers) REFERENCES Group_attackers(id_group)
+                FOREIGN KEY (id_response) REFERENCES Response(id_resp)
+             );
+            """}
+                
+        
+                
+
+                
+    
         # TODO: COMPLETE THE CODE HERE TO CREATE THE OTHER TABLES ####
-    }
+    
     try:
         # To create the tables, we call the function cursor.execute() and we pass it the
         # CREATE TABLE statement as a parameter.
