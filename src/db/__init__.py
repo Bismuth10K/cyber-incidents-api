@@ -125,8 +125,7 @@ def create_database(cursor, conn):
             CREATE TABLE IF NOT EXISTS Group_attackers(
                 id_group INTEGER PRIMARY KEY,
                 name TEXT,
-                country TEXT,
-                sponsored TEXT
+                country TEXT
              );
             """,
         "Attack_victims":"""
@@ -147,19 +146,12 @@ def create_database(cursor, conn):
                 username_agent TEXT,
                 id_group_attackers INTEGER,
                 id_response INTEGER,
+                sponsored TEXT,
                 FOREIGN KEY (username_agent) REFERENCES Agent(username)
                 FOREIGN KEY (id_group_attackers) REFERENCES Group_attackers(id_group)
                 FOREIGN KEY (id_response) REFERENCES Response(id_resp)
              );
             """}
-                
-        
-                
-
-                
-    
-        # TODO: COMPLETE THE CODE HERE TO CREATE THE OTHER TABLES ####
-    
     try:
         # To create the tables, we call the function cursor.execute() and we pass it the
         # CREATE TABLE statement as a parameter.
@@ -205,6 +197,7 @@ def populate_database(cursor, conn, csv_file_name):
     bool
         True if the database is correctly populated, False otherwise.
     """
+    
     # TODO
     return False
 
