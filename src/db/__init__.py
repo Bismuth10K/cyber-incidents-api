@@ -49,7 +49,8 @@ def transform_csv(old_csv_file_name, new_csv_file_name):
     """
     df = pd.read_csv(old_csv_file_name)
     df[["type of response", "source of response"]] = df["Response"].str.split("   ", n=1, expand=True)
-    df["Attackers confirmed"] = not np.any(df["Affiliations"].str.contains(r"\ABelieved"))
+    is_believed = np.any([df["Affiliations"].str.contains(r"[bB]elieved"), df["Affiliations"].str.contains(r"[sS]uspected"), df["Affiliations"].str.contains(r"[pP]ossibly")], axis=0)
+    df["Attackers confirmed"] = np.invert(is_believed)
     df.to_csv(new_csv_file_name)
 
 
@@ -90,7 +91,7 @@ def create_database(cursor, conn):
     # or ROLLBACK.
     #
     # * COMMIT is called when no error occurs. After calling COMMIT, the result of all the statements in
-    # the transaction is permanetly written to the database. In our example, COMMIT results in actually creating all the tables
+    # the transaction is permanently written to the database. In our example, COMMIT results in actually creating all the tables
     # (XXX, YYY, ZZZ, ....)
     #
     # * ROLLBACK is called when any error occurs in the transaction. Calling ROLLBACK means that
@@ -107,33 +108,12 @@ def create_database(cursor, conn):
                 password BINARY(256)
             );
             """,
-        "Response":"""
-            CREATE TABLE IF NOT EXISTS Response(
-                 id_resp INTEGER PRIMARY KEY,
-                 type_response TEXT,
-                 source_info TEXT
-            );
-            """,
-        "Victims":"""
-            CREATE TABLE IF NOT EXISTS Victims(
-                id_victims INTEGER PRIMARY KEY,
-                name TEXT,
-                sector TEXT
-            );
-            """,
-        "Group_attackers":"""
-            CREATE TABLE IF NOT EXISTS Group_attackers(
-                id_group INTEGER PRIMARY KEY,
-                name TEXT,
-                country TEXT
-             );
-            """,
-        "Attack_victims":"""
-            CREATE TABLE IF NOT EXISTS Attack_victims(
+        "Attack Victims Sector":"""
+            CREATE TABLE IF NOT EXISTS Attack_sectors(
                 id_att INTEGER,
-                id_vic INTEGER,
+                id_sec INTEGER,
                 FOREIGN KEY (id_att) REFERENCES Attacks (id_attack)
-                FOREIGN KEY (id_vic) REFERENCES Victims (id_victims)
+                FOREIGN KEY (id_sec) REFERENCES Sectors (id_sector)
              );
             """,
         "Attacks":"""
@@ -143,15 +123,16 @@ def create_database(cursor, conn):
                 title TEXT,
                 source_information TEXT,
                 attackers_confirmed TEXT,
-                username_agent TEXT,
-                id_group_attackers INTEGER,
-                id_response INTEGER,
+                group_attackers TEXT,
                 sponsored TEXT,
+                type_response TEXT,
+                source_info TEXT,
+                victim TEXT,
+                username_agent TEXT,
                 FOREIGN KEY (username_agent) REFERENCES Agent(username)
-                FOREIGN KEY (id_group_attackers) REFERENCES Group_attackers(id_group)
-                FOREIGN KEY (id_response) REFERENCES Response(id_resp)
              );
             """}
+    
     try:
         # To create the tables, we call the function cursor.execute() and we pass it the
         # CREATE TABLE statement as a parameter.
@@ -197,9 +178,23 @@ def populate_database(cursor, conn, csv_file_name):
     bool
         True if the database is correctly populated, False otherwise.
     """
+    df = pd.read_csv(csv_file_name)
     
-    # TODO
-    return False
+    df_sector_vict = df.loc[:, ["Category"]].drop_duplicates().dropna().values.tolist()
+    list_sector_vict = pd.unique([cat for liste in df_sector_vict for cat in liste[0].split(", ")])
+    pd.DataFrame(list_sector_vict).iloc[:, 0].to_sql("Sectors", con=conn, if_exists="replace")
+    
+    jointure_cat = df.loc[:, "Category"].apply(lambda x: [np.where(list_sector_vict == vic.strip())[0].item() if np.where(list_sector_vict == vic)[0].size > 0 else -1 for vic in str(x).split(", ")])
+    
+    for i, row in jointure_cat.items():
+        for sector in row:
+            cursor.execute(f"""INSERT INTO Attack_sectors VALUES ({i}, {sector})""")
+    
+
+    df[["username_agents"]] = pd.NA
+    df.loc[:, "sources"] = df["Sources_1"].fillna("None") + " ___ " + df["Sources_2"].fillna("None") + " ___ " + df["Sources_3"].fillna("None")
+
+    df.loc[:, ["Date", "Title", "sources", "Attackers confirmed", "Affiliations", "Sponsor", "type of response", "source of response", "Victims", "username_agents"]].to_sql("Attacks", con=conn, if_exists="replace")
 
 
 def init_database():
@@ -216,7 +211,7 @@ def init_database():
         create_database(cursor, conn)
 
         # Populates the database.
-        # TODO - add call to populate_database()
+        populate_database(cursor, conn, "data/q3-cyber-operations-incidents.csv")
 
         # Closes the connection to the database
         close_db_connexion(cursor, conn)
