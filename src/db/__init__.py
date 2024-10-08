@@ -178,24 +178,28 @@ def populate_database(cursor, conn, csv_file_name):
     bool
         True if the database is correctly populated, False otherwise.
     """
-    df = pd.read_csv(csv_file_name)
-    
-    df_sector_vict = df.loc[:, ["Category"]].drop_duplicates().dropna().values.tolist()
-    list_sector_vict = pd.unique([cat for liste in df_sector_vict for cat in liste[0].split(", ")])
-    pd.DataFrame(list_sector_vict).iloc[:, 0].to_sql("Sectors", con=conn, if_exists="replace")
-    
-    jointure_cat = df.loc[:, "Category"].apply(lambda x: [np.where(list_sector_vict == vic.strip())[0].item() if np.where(list_sector_vict == vic)[0].size > 0 else -1 for vic in str(x).split(", ")])
-    
-    for i, row in jointure_cat.items():
-        for sector in row:
-            cursor.execute(f"""INSERT INTO Attack_sectors VALUES ({i}, {sector})""")
-    
+    try:
+        df = pd.read_csv(csv_file_name)
+        
+        df_sector_vict = df.loc[:, ["Category"]].drop_duplicates().dropna().values.tolist()
+        list_sector_vict = pd.unique([cat for liste in df_sector_vict for cat in liste[0].split(", ")])
+        pd.DataFrame(list_sector_vict).iloc[:, 0].to_sql("Sectors", con=conn, if_exists="replace")
+        
+        jointure_cat = df.loc[:, "Category"].apply(lambda x: [np.where(list_sector_vict == vic.strip())[0].item() if np.where(list_sector_vict == vic)[0].size > 0 else -1 for vic in str(x).split(", ")])
+        for i, row in jointure_cat.items():
+            for sector in row:
+                cursor.execute(f"""INSERT INTO Attack_sectors VALUES ({i}, {sector})""")
+        
 
-    df[["username_agents"]] = pd.NA
-    df.loc[:, "sources"] = df["Sources_1"].fillna("None") + " ___ " + df["Sources_2"].fillna("None") + " ___ " + df["Sources_3"].fillna("None")
+        df[["username_agents"]] = pd.NA
+        df.loc[:, "sources"] = df["Sources_1"].fillna("None") + " ___ " + df["Sources_2"].fillna("None") + " ___ " + df["Sources_3"].fillna("None")
 
-    df.loc[:, ["Date", "Title", "sources", "Attackers confirmed", "Affiliations", "Sponsor", "type of response", "source of response", "Victims", "username_agents"]].to_sql("Attacks", con=conn, if_exists="replace")
+        df.loc[:, ["Date", "Title", "sources", "Attackers confirmed", "Affiliations", "Sponsor", "type of response", "source of response", "Victims", "username_agents"]].to_sql("Attacks", con=conn, if_exists="replace")
 
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 def init_database():
     """Initialise the database by creating the database
