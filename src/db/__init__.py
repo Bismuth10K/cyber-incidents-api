@@ -259,9 +259,6 @@ def join_tables(cursor, conn, df, column, table, table_joint, if_exists="replace
             if elem != -1:
                 cursor.execute(f"""INSERT INTO {table_joint} VALUES ({i}, {elem})""")
 
-def new_tables(cursor, conn, df, column, table, table_FK):
-    pass
-
 def init_database():
     """Initialise the database by creating the database
     and populating it.
