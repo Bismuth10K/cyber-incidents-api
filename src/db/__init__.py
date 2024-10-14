@@ -108,28 +108,60 @@ def create_database(cursor, conn):
                 password BINARY(256)
             );
             """,
-        "Attack Victims Sector":"""
-            CREATE TABLE IF NOT EXISTS Attack_sectors(
-                id_att INTEGER,
-                id_sec INTEGER,
-                FOREIGN KEY (id_att) REFERENCES Attacks (id_attack)
-                FOREIGN KEY (id_sec) REFERENCES Sectors (id_sector)
+
+        "Victims":"""
+            CREATE TABLE IF NOT EXISTS Victims(
+                id_victim INTEGER PRIMARY KEY,
+                name_victim TEXT,
+                name_sector TEXT
              );
             """,
+
+        "Sources":"""
+            CREATE TABLE IF NOT EXISTS Sources(
+                id_source INTEGER PRIMARY KEY,
+                name_source TEXT
+             );
+            """,
+        "Attack Source":"""
+            CREATE TABLE IF NOT EXISTS Attack_sources(
+                id_att INTEGER,
+                id_src INTEGER,
+                FOREIGN KEY (id_att) REFERENCES Attacks (id_attack)
+                FOREIGN KEY (id_src) REFERENCES Sources (id_source)
+             );
+            """,
+
+        "Response":"""
+            CREATE TABLE IF NOT EXISTS Response(
+                id_resp INTEGER PRIMARY KEY,
+                name_type TEXT,
+                name_src TEXT
+             );
+            """,
+
+        "Group Attackers":"""
+            CREATE TABLE IF NOT EXISTS grp_attackers(
+                id_grp_att INTEGER PRIMARY KEY,
+                name_grp_att TEXT,
+                name_sponsor TEXT
+             );
+            """,
+
         "Attacks":"""
             CREATE TABLE IF NOT EXISTS Attacks(
                 id_attack INTEGER PRIMARY KEY,
                 date TEXT,
                 title TEXT,
-                source_information TEXT,
                 attackers_confirmed TEXT,
-                group_attackers TEXT,
-                sponsored TEXT,
-                type_response TEXT,
-                source_info TEXT,
-                victim TEXT,
+                group_attackers INTEGER,
                 username_agent TEXT,
+                response INTEGER,
+                victims INTEGER,
                 FOREIGN KEY (username_agent) REFERENCES Agent(username)
+                FOREIGN KEY (group_attackers) REFERENCES grp_attackers(id_grp_att)
+                FOREIGN KEY (response) REFERENCES Response(id_resp)
+                FOREIGN KEY (victims) REFERENCES Victims(id_victim)
              );
             """}
     
@@ -180,26 +212,55 @@ def populate_database(cursor, conn, csv_file_name):
     """
     try:
         df = pd.read_csv(csv_file_name)
-        
-        df_sector_vict = df.loc[:, ["Category"]].drop_duplicates().dropna().values.tolist()
-        list_sector_vict = pd.unique([cat for liste in df_sector_vict for cat in liste[0].split(", ")])
-        pd.DataFrame(list_sector_vict).iloc[:, 0].to_sql("Sectors", con=conn, if_exists="replace")
-        
-        jointure_cat = df.loc[:, "Category"].apply(lambda x: [np.where(list_sector_vict == vic.strip())[0].item() if np.where(list_sector_vict == vic)[0].size > 0 else -1 for vic in str(x).split(", ")])
-        for i, row in jointure_cat.items():
-            for sector in row:
-                cursor.execute(f"""INSERT INTO Attack_sectors VALUES ({i}, {sector})""")
-        
 
+        df.loc[:, "Sources"] = df.loc[:, "Sources_1"].fillna("None") + " ___ " + df.loc[:, "Sources_2"].fillna("None") + " ___ " + df.loc[:, "Sources_3"].fillna("None")
+        join_tables(cursor, conn, df, "Sources", "Sources", "Attack_sources")
+        
         df[["username_agents"]] = pd.NA
-        df.loc[:, "sources"] = df["Sources_1"].fillna("None") + " ___ " + df["Sources_2"].fillna("None") + " ___ " + df["Sources_3"].fillna("None")
+        df[["group_attackers"]] = pd.NA
+        df[["response"]] = pd.NA
+        df[["victim"]] = pd.NA
 
-        df.loc[:, ["Date", "Title", "sources", "Attackers confirmed", "Affiliations", "Sponsor", "type of response", "source of response", "Victims", "username_agents"]].to_sql("Attacks", con=conn, if_exists="replace")
+        df = populate_new_table(cursor, df, ["Affiliations", "Sponsor"], "group_attackers", "grp_attackers")
+        df = populate_new_table(cursor, df, ["type of response", "source of response"], "response", "Response")
+        df = populate_new_table(cursor, df, ["Victims", "Category"], "victim", "Victims")
 
+
+        df.loc[:, ["Date", "Title", "Attackers confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace")
+
+        conn.commit()
         return True
     except Exception as e:
         print(e)
         return False
+
+def populate_new_table(cursor, df, columns, FK_column, table):
+    index_table = 0
+    for index, row in df.loc[:, columns].iterrows():
+        if not np.all(pd.isna(row)):
+            part_query = ""
+            for i in row:
+                part_query += f', "{i}"'
+            cursor.execute(f'Insert Into {table} Values ({index_table}{part_query})')
+            df.at[index, FK_column] = index_table
+            index_table += 1
+        else:
+            df.at[index, FK_column] = pd.NA
+    return df
+
+def join_tables(cursor, conn, df, column, table, table_joint, if_exists="replace"):
+    df_col = df.loc[:, [column]].dropna().drop_duplicates().values.tolist()
+    list_col = pd.unique([elem for liste in df_col for elem in liste[0].split(", ")])
+    pd.DataFrame(list_col).iloc[:, 0].to_sql(table, con=conn, if_exists=if_exists)
+
+    jointure = df.loc[:, column].apply(lambda x: [np.where(list_col == elem)[0].item() if np.where(list_col == elem)[0].size > 0 else -1 for elem in str(x).split(", ")])
+    for i, row in jointure.items():
+        for elem in row:
+            if elem != -1:
+                cursor.execute(f"""INSERT INTO {table_joint} VALUES ({i}, {elem})""")
+
+def new_tables(cursor, conn, df, column, table, table_FK):
+    pass
 
 def init_database():
     """Initialise the database by creating the database
