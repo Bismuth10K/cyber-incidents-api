@@ -153,6 +153,7 @@ def create_database(cursor, conn):
                 id_attack INTEGER PRIMARY KEY,
                 date TEXT,
                 title TEXT,
+                type TEXT,
                 attackers_confirmed TEXT,
                 group_attackers INTEGER,
                 username_agent TEXT,
@@ -226,7 +227,7 @@ def populate_database(cursor, conn, csv_file_name):
         df = populate_new_table(cursor, df, ["Victims", "Category"], "victim", "Victims")
 
 
-        df.loc[:, ["Date", "Title", "Attackers confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace")
+        df.loc[:, ["Date", "Title", "Type", "Attackers confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace")
 
         conn.commit()
         return True
@@ -288,7 +289,8 @@ def join_tables(cursor, conn, df, column, table, table_joint):
     """
     df_col = df.loc[:, [column]].dropna().drop_duplicates().values.tolist()
     list_col = pd.unique([elem for liste in df_col for elem in liste[0].split(", ")])
-    pd.DataFrame(list_col).iloc[:, 0].to_sql(table, con=conn, if_exists="replace")
+    pd.DataFrame(list_col).to_sql(table, con=conn, if_exists="replace")
+    print(pd.DataFrame(list_col).iloc[:, 0])
 
     jointure = df.loc[:, column].apply(lambda x: [np.where(list_col == elem)[0].item() if np.where(list_col == elem)[0].size > 0 else -1 for elem in str(x).split(", ")])
     for i, row in jointure.items():
