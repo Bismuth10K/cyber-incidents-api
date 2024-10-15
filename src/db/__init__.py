@@ -235,6 +235,26 @@ def populate_database(cursor, conn, csv_file_name):
         return False
 
 def populate_new_table(cursor, df, columns, FK_column, table):
+    """Populate a table with data coming from a CSV file.
+
+    Parameters
+    ----------
+    cursor
+        The object used to query the database.
+    df
+        The pandas dataframe of the datas coming from the csv.
+    columns
+        Tells which columns from df will go into the new table.
+    FK_column
+        Tells which column from df will act as the foreign key of the id in the new table.
+    table
+        Table where we add the datas in columns.
+
+    Returns
+    -------
+    df
+        Return the new dataframe as FK_column has been modified.
+    """
     index_table = 0
     for index, row in df.loc[:, columns].iterrows():
         if not np.all(pd.isna(row)):
@@ -248,10 +268,27 @@ def populate_new_table(cursor, df, columns, FK_column, table):
             df.at[index, FK_column] = pd.NA
     return df
 
-def join_tables(cursor, conn, df, column, table, table_joint, if_exists="replace"):
+def join_tables(cursor, conn, df, column, table, table_joint):
+    """Populate a table for one column of the dataframe, and make an association-table between the main table (attacks) and the new table.
+
+    Parameters
+    ----------
+    cursor
+        The object used to query the database.
+    conn
+        The object used to manage the database connection.
+    df
+        The pandas dataframe of the datas coming from the csv.
+    column
+        Tells which column from df will go into the new table.
+    table
+        Table where we add the datas in columns.
+    table_joint
+        The association-table.
+    """
     df_col = df.loc[:, [column]].dropna().drop_duplicates().values.tolist()
     list_col = pd.unique([elem for liste in df_col for elem in liste[0].split(", ")])
-    pd.DataFrame(list_col).iloc[:, 0].to_sql(table, con=conn, if_exists=if_exists)
+    pd.DataFrame(list_col).iloc[:, 0].to_sql(table, con=conn, if_exists="replace")
 
     jointure = df.loc[:, column].apply(lambda x: [np.where(list_col == elem)[0].item() if np.where(list_col == elem)[0].size > 0 else -1 for elem in str(x).split(", ")])
     for i, row in jointure.items():
