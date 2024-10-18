@@ -54,6 +54,8 @@ def test_insert_agent():
     # Insert agent Hubert
     insert_hubert(cursor)
 
+    conn.commit()
+
     # Close connexion
     close_db_connexion(cursor, conn)
 
@@ -70,6 +72,7 @@ def test_update_password_existing_agent():
         # Print results from update
         print("Update successful:", update_ok)
         print("Number of modified rows in the database:", cursor.rowcount)
+        conn.commit()
     except NotImplementedError as error:
         print("update_password() not implemented")
     close_db_connexion(cursor, conn)
@@ -98,5 +101,5 @@ if __name__ == "__main__":
     print_agents()
 
     test_update_password_existing_agent()
-    # test_update_password_non_existing_agent()
-    # print_agents()
+    test_update_password_non_existing_agent()
+    print_agents()
