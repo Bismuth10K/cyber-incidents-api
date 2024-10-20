@@ -7,7 +7,7 @@ from utils import token_required
 data_bp = Blueprint("data", __name__)
 
 
-@token_required
+# @token_required
 @data_bp.route("/sources")
 def get_sources():
     """Get all sources in the database.
@@ -32,7 +32,7 @@ def get_sources():
         return jsonify({"message": f"Error: while fetching sources - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @data_bp.route("/targets")
 def get_targets():
     """Get all targets in the database.
@@ -57,7 +57,7 @@ def get_targets():
         return jsonify({"message": f"Error: while fetching sources - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @data_bp.route("/attackers")
 def get_attackers():
     """Get all attackers in the database.
@@ -82,7 +82,7 @@ def get_attackers():
         return jsonify({"message": f"Error: while fetching attackers - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @data_bp.route("/responses")
 def get_responses():
     """Get all responses in the database.

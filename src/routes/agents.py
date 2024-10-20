@@ -7,7 +7,7 @@ import db.agents
 agents_bp = Blueprint("agents", __name__)
 
 
-@token_required
+# @token_required
 @agents_bp.route("/", methods=["GET"])
 def get_all_agents():
     """Fetch all agents from the database.
@@ -34,7 +34,7 @@ def get_all_agents():
     return jsonify({"agents": [dict(agent)["username"] for agent in all_agents]})
 
 
-@token_required
+# @token_required
 @agents_bp.route("/<agent_username>", methods=["GET"])
 def get_agent(agent_username):
     """Fetch a single agent from the database based on its username.
@@ -72,7 +72,7 @@ def get_agent(agent_username):
     return jsonify({"Agent": agent})
 
 
-@token_required
+# @token_required
 @agents_bp.route("/<agent_username>", methods=["PATCH"])
 def patch_password(agent_username):
     """Patch the password of an agent.
@@ -113,7 +113,7 @@ def patch_password(agent_username):
         return jsonify({"message": f"Error: while updating password - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @agents_bp.route("/", methods=["POST"])
 def add_agent():
     """Add an agent to the database.

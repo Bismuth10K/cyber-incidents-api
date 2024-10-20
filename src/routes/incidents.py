@@ -6,7 +6,7 @@ from utils import token_required
 incidents_bp = Blueprint("incidents", __name__)
 
 
-@token_required
+# @token_required
 @incidents_bp.route("/<int:incident_id>")
 def get_incident(incident_id):
     """Get an incident in the database based on its incident id.
@@ -43,7 +43,7 @@ def get_incident(incident_id):
         return jsonify({"message": f"Error: while fetching the incident - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @incidents_bp.route("/<int:incident_id>/assign", methods=["POST"])
 def assign_incident(incident_id):
     """Assign an incident to an agent.
@@ -97,7 +97,7 @@ def assign_incident(incident_id):
         return jsonify({"message": f"Error: while assigning the incident - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @incidents_bp.route("/<int:incident_id>", methods=["PATCH"])
 def update_incident(incident_id):
     """Update an incident in the database based on its incident id.
@@ -136,7 +136,7 @@ def update_incident(incident_id):
     return jsonify({"message": "TODO"})
 
 
-@token_required
+# @token_required
 @incidents_bp.route("/<int:incident_id>/add", methods=["POST"])
 def add_element_to_incident(incident_id):
     """Add an element to an incident in the database based on its incident id.
@@ -193,7 +193,7 @@ def add_element_to_incident(incident_id):
         return jsonify({"message": f"Error: while updating the incident - {str(e)}"}), 500
 
 
-@token_required
+# @token_required
 @incidents_bp.route("/<int:incident_id>/remove", methods=["POST"])
 def remove_element_from_incident(incident_id):
     """Remove an element from an incident in the database.
