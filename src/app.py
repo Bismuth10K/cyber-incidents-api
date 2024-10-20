@@ -37,4 +37,7 @@ if __name__ == "__main__":
     app = create_app()
     init_database()
     test_insert_agent()
+    print("-" * 10)
+    print(app.url_map)
+    print("-" * 10)
     app.run(port=5000, debug=False)
