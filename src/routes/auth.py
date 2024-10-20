@@ -21,5 +21,20 @@ def login():
         400 if the username or password is not provided
         500 if an error occured while authenticating the agent
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    username = request.json.get('username')
+    password = request.json.get('password')
+
+    if not username or not password:
+        return jsonify({"message": "No username or password provided"}), 400
+
+    try:
+        if check_agent(username, password):
+            token = generate_token(username)
+            if token:
+                return jsonify({"token": token}), 200
+            else:
+                return jsonify({"message": "Error: while generating token"}), 500
+        else:
+            return jsonify({"message": "Invalid credentials"}), 401
+    except Exception as e:
+        return jsonify({"message": f"Error: while authenticating agent - {str(e)}"}), 500

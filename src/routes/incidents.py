@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from db import get_db_connexion, close_db_connexion
 import json
+from utils import token_required
 
 incidents_bp = Blueprint("incidents", __name__)
 
 
+@token_required
 @incidents_bp.route("/<int:incident_id>")
 def get_incident(incident_id):
     """Get an incident in the database based on its incident id.
@@ -41,6 +43,7 @@ def get_incident(incident_id):
         return jsonify({"message": f"Error: while fetching the incident - {str(e)}"}), 500
 
 
+@token_required
 @incidents_bp.route("/<int:incident_id>/assign", methods=["POST"])
 def assign_incident(incident_id):
     """Assign an incident to an agent.
@@ -94,6 +97,7 @@ def assign_incident(incident_id):
         return jsonify({"message": f"Error: while assigning the incident - {str(e)}"}), 500
 
 
+@token_required
 @incidents_bp.route("/<int:incident_id>", methods=["PATCH"])
 def update_incident(incident_id):
     """Update an incident in the database based on its incident id.
@@ -132,6 +136,7 @@ def update_incident(incident_id):
     return jsonify({"message": "TODO"})
 
 
+@token_required
 @incidents_bp.route("/<int:incident_id>/add", methods=["POST"])
 def add_element_to_incident(incident_id):
     """Add an element to an incident in the database based on its incident id.
@@ -161,10 +166,34 @@ def add_element_to_incident(incident_id):
         404 if the incident does not exist in the database
         500 if an error occured while updating the incident
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        data = request.json
+        query = None
+
+        if 'target' in data:
+            query = f"UPDATE Attacks SET victim = '{data["target"]}' WHERE id_attack = {incident_id}"
+        elif 'source' in data:
+            query = f"UPDATE Attacks SET id_src = '{data["source"]}' WHERE id_attack = {incident_id}"
+
+        if not query:
+            return jsonify({"message": "No field provided to be added"}), 400
+
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Attacks WHERE id_attack = %s", (incident_id,))
+        if not cursor.fetchone():
+            return jsonify({"message": "Incident does not exist"}), 404
+        cursor.execute(query)
+        cursor.commit()
+        close_db_connexion(cursor, conn)
+        return jsonify({"message": "Done"}), 200
+    
+    except Exception as e:
+        cursor.rollback()
+        return jsonify({"message": f"Error: while updating the incident - {str(e)}"}), 500
 
 
+@token_required
 @incidents_bp.route("/<int:incident_id>/remove", methods=["POST"])
 def remove_element_from_incident(incident_id):
     """Remove an element from an incident in the database.

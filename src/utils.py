@@ -1,6 +1,6 @@
 import bcrypt
-# import jwt
-# import datetime
+import jwt
+import datetime
 import configparser
 from functools import wraps
 from flask import request, jsonify
@@ -45,11 +45,11 @@ def hash_password(plain_password):
     hashed_password
         A password hash
     """
-    if isinstance(password, str):
-        password = password.encode('utf-8')
+    if isinstance(plain_password, str):
+        plain_password = plain_password.encode('utf-8')
     
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password, salt)
+    hashed_password = bcrypt.hashpw(plain_password, salt)
     
     return hashed_password
 
@@ -110,8 +110,19 @@ def generate_token(username):
     token
         the generated token based on the username and an expiracy date of 1h.
     """
-    # TODO - Generate a token using the secret key in the config file
-    return ""
+    try:
+        expiration_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+
+        payload = {
+            'username': username,
+            'exp': expiration_time
+        }
+
+        token = jwt.encode(payload, load_config()['SECRET_KEY'], algorithm='HS256')
+        return token
+    except Exception as e:
+        print(f"Error generating token: {e}")
+        return None
 
 
 def check_token(token):
@@ -129,13 +140,22 @@ def check_token(token):
         An error if the token is expired or invalid
     """
     try:
-        # TODO: Decode the token using the secret key in the configuration file
-        payload = {}
+        payload = jwt.decode(token, load_config()['SECRET_KEY'], algorithms=['HS256'])
+        
+        if datetime.datetime.now(datetime.timezone.utc) > datetime.datetime.fromtimestamp(payload['exp'], datetime.timezone.utc):
+            print("Token has expired")
+            return None
+        
         return payload
     except jwt.ExpiredSignatureError:
-        raise jwt.ExpiredSignatureError
+        print("Token has expired")
+        return None
     except jwt.InvalidTokenError:
-        raise jwt.InvalidTokenError
+        print("Invalid token")
+        return None
+    except Exception as e:
+        print(f"Error checking token: {e}")
+        return None
 
 
 def token_required(f):

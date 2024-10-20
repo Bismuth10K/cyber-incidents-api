@@ -33,7 +33,7 @@ def insert_agent(agent, cursor):
 
         query_insert_agent = "INSERT INTO Agent (username, password) VALUES (?, ?)"
         cursor.execute(query_insert_agent,
-                       (agent["username"], agent["password"]))
+                       (agent["username"], utils.hash_password(agent["password"])))
         
     except sqlite3.IntegrityError as error:
         print(f"An integrity error occurred while insert the agent: {error}")

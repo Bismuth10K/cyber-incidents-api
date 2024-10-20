@@ -5,6 +5,7 @@ from db import init_database
 from routes.agents import agents_bp
 from routes.data import data_bp
 from routes.incidents import incidents_bp
+from routes.auth import auth_bp
 
 from test_agents import test_insert_agent
 
@@ -26,8 +27,7 @@ def create_app():
     app.register_blueprint(agents_bp, url_prefix="/agents")
     app.register_blueprint(data_bp, url_prefix="/data")
     app.register_blueprint(incidents_bp, url_prefix="/incidents")
-
-    # TODO - ADD OTHER BLUEPRINTS
+    app.register_blueprint(auth_bp, url_prefix="/login")
 
     return app
 
