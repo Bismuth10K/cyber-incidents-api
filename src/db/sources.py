@@ -1,3 +1,5 @@
+from flask import jsonify
+
 def insert_source(conn, cursor, link):
     """Insère une source
 
@@ -38,9 +40,11 @@ def get_sources(cursor):
         Liste de toutes les sources.
     """
     try:
-        cursor.execute(f'Select DISTINCT name_source from Sources')
-        res = cursor.fetchall()
-        return res
+        query = """Select DISTINCT name_source from Sources"""
+        
+        cursor.execute(query)
+        sources = [row[0] for row in cursor.fetchall()]
+        
+        return sources
     except Exception as e:
-        print(e)
-        return None
+        raise Exception(f"Erreur lors de la récupération des sources : {str(e)}")

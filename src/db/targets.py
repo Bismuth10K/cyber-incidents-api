@@ -31,9 +31,11 @@ def get_targets(cursor):
         Liste des victims.
     """
     try:
-        cursor.execute(f'Select DISTINCT name_victim from Victims')
-        res = cursor.fetchall()
-        return res
+        query = """Select DISTINCT name_victim from Victims"""
+        
+        cursor.execute(query)
+        targets = [row[0] for row in cursor.fetchall()]
+        return targets
     except Exception as e:
-        print(e)
-        return None
+        # Nous laissons la gestion de l'erreur à la fonction appelante
+        raise Exception(f"Erreur lors de la récupération des sources : {str(e)}")

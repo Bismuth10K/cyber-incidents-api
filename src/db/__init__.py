@@ -222,13 +222,15 @@ def populate_database(cursor, conn, csv_file_name):
         df[["group_attackers"]] = pd.NA
         df[["response"]] = pd.NA
         df[["victim"]] = pd.NA
+        df = df.rename(columns={"Attackers confirmed": "attackers_confirmed"})
 
         df = populate_new_table(cursor, df, ["Affiliations", "Sponsor"], "group_attackers", "grp_attackers")
         df = populate_new_table(cursor, df, ["type of response", "source of response"], "response", "Response")
         df = populate_new_table(cursor, df, ["Victims", "Category"], "victim", "Victims")
 
 
-        df.loc[:, ["Date", "Title", "Type", "Attackers confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace", index_label='id_attack')
+        out = df.loc[:, ["Date", "Title", "Type", "attackers_confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace", index_label='id_attack')
+        print(out)
 
         conn.commit()
         return True
@@ -291,6 +293,7 @@ def join_tables(cursor, conn, df, column, table, table_joint):
     df_col = df.loc[:, [column]].dropna().drop_duplicates().values.tolist()
     list_col = pd.unique([elem for liste in df_col for elem in liste[0].split(", ")])
     pd.DataFrame(list_col).to_sql(table, con=conn, if_exists="replace")
+    cursor.execute(f"ALTER TABLE {table} RENAME COLUMN '0' TO name_source")
 
     jointure = df.loc[:, column].apply(lambda x: [np.where(list_col == elem)[0].item() if np.where(list_col == elem)[0].size > 0 else -1 for elem in str(x).split(", ")])
     for i, row in jointure.items():
@@ -303,7 +306,10 @@ def init_database():
     and populating it.
     """
     try:
-        os.remove("data/incidents.db")
+        try:
+            os.remove("data/incidents.db")
+        except:
+            pass
         conn = get_db_connexion()
 
         # The cursor is used to execute queries to the database.

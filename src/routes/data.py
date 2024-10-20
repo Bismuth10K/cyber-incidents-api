@@ -1,4 +1,7 @@
 from flask import Blueprint, request, jsonify
+from db import get_db_connexion, close_db_connexion
+from db import sources, targets, attackers
+
 
 data_bp = Blueprint("data", __name__)
 
@@ -17,8 +20,14 @@ def get_sources():
         200 if the sources are correctly fetched
         500 if an error occured while fetching the sources
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        result = sources.get_sources(cursor)
+        close_db_connexion(cursor, conn)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"Error: while fetching sources - {str(e)}"}), 500
 
 
 @data_bp.route("/targets")
@@ -35,8 +44,14 @@ def get_targets():
         200 if the targets are correctly fetched
         500 if an error occured while fetching the targets
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        result = targets.get_targets(cursor)
+        close_db_connexion(cursor, conn)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"Error: while fetching sources - {str(e)}"}), 500
 
 
 @data_bp.route("/attackers")
@@ -53,9 +68,14 @@ def get_attackers():
         200 if the attackers are correctly fetched
         500 if an error occured while fetching the attackers
     """
-    # TODO
-    return jsonify({"message": "TODO"})
-
+    try:
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        result = attackers.get_attackers(cursor)
+        close_db_connexion(cursor, conn)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"message": f"Error: while fetching attackers - {str(e)}"}), 500
 
 @data_bp.route("/responses")
 def get_responses():
@@ -71,5 +91,12 @@ def get_responses():
         200 if the responses are correctly fetched
         500 if an error occured while fetching the responses
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Response")
+        responses = [[elem for elem in row] for row in cursor.fetchall()]
+        close_db_connexion(cursor, conn)
+        return jsonify(responses), 200
+    except Exception as e:
+        return jsonify({"message": f"Error: while fetching responses - {str(e)}"}), 500

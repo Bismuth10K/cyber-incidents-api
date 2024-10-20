@@ -55,9 +55,11 @@ def get_attackers(cursor):
         Liste des attaquants sans doublons.
     """
     try:
-        cursor.execute(f'Select DISTINCT name_grp_att from grp_attackers')
-        res = cursor.fetchall()
-        return res
+        query = """Select DISTINCT name_grp_att from grp_attackers"""
+        
+        cursor.execute(query)
+        sources = [row[0] for row in cursor.fetchall()]
+        
+        return sources
     except Exception as e:
-        print(e)
-        return None
+        raise Exception(f"Erreur lors de la récupération des sources : {str(e)}")

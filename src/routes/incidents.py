@@ -1,4 +1,6 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
+from db import get_db_connexion, close_db_connexion
+import json
 
 incidents_bp = Blueprint("incidents", __name__)
 
@@ -25,8 +27,18 @@ def get_incident(incident_id):
         404 if the incident does not exist in the database
         500 if an error occured while fetching the incident
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM Attacks WHERE id_attack = {incident_id}")
+        incident = [elem for elem in cursor.fetchone()]
+            
+        if incident:
+            return jsonify(incident), 200
+        else:
+            return jsonify({"message": "Incident does not exist"}), 404
+    except Exception as e:
+        return jsonify({"message": f"Error: while fetching the incident - {str(e)}"}), 500
 
 
 @incidents_bp.route("/<int:incident_id>/assign", methods=["POST"])
@@ -57,8 +69,29 @@ def assign_incident(incident_id):
         404 if the agent does not exist in the database
         500 if an error occured while fetching the incident
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        text = request.get_data("text")
+        username = json.loads(text.decode('utf-8')).get("username")
+        if not username:
+            return jsonify({"message": "No agent username provided for assignment"}), 400
+
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT * FROM Attacks WHERE id_attack = "{incident_id}"')
+        if not cursor.fetchone():
+            return jsonify({"message": "Incident does not exist"}), 404
+
+        cursor.execute(f'SELECT * FROM Agents WHERE username = "{username}"')
+        if not cursor.fetchone():
+            return jsonify({"message": "Agent does not exist"}), 404
+
+        cursor.execute(f'UPDATE Attacks SET username_agents = "{username}" WHERE id_attack = {incident_id}')
+        cursor.commit()
+
+        return jsonify({"message": "Done"}), 200
+
+    except Exception as e:
+        return jsonify({"message": f"Error: while assigning the incident - {str(e)}"}), 500
 
 
 @incidents_bp.route("/<int:incident_id>", methods=["PATCH"])
@@ -161,5 +194,28 @@ def remove_element_from_incident(incident_id):
         404 if the incident does not exist in the database
         500 if an error occured while updating the incident
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        data = request.json
+        query = None
+
+        if 'target' in data:
+            query = f"UPDATE Attacks SET victim = NULL WHERE id_attack = {incident_id}"
+        elif 'source' in data:
+            query = f"DELETE FROM Attack_sources WHERE id_att = {incident_id}"
+
+        if not query:
+            return jsonify({"message": "No field provided to be removed"}), 400
+
+        conn = get_db_connexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM Attacks WHERE id_attack = %s", (incident_id,))
+        if not cursor.fetchone():
+            return jsonify({"message": "Incident does not exist"}), 404
+        cursor.execute(query)
+        cursor.commit()
+        close_db_connexion(cursor, conn)
+        return jsonify({"message": "Done"}), 200
+    
+    except Exception as e:
+        cursor.rollback()
+        return jsonify({"message": f"Error: while updating the incident - {str(e)}"}), 500

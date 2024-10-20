@@ -1,8 +1,10 @@
-from flask import Flask
+from flask import Flask, request
 
 from db import init_database
 
 from routes.agents import agents_bp
+from routes.data import data_bp
+from routes.incidents import incidents_bp
 
 from test_agents import test_insert_agent
 
@@ -22,6 +24,8 @@ def create_app():
     # Take a look at the file ./routes/agents.py to have more
     # details about the routes you have access to.
     app.register_blueprint(agents_bp, url_prefix="/agents")
+    app.register_blueprint(data_bp, url_prefix="/data")
+    app.register_blueprint(incidents_bp, url_prefix="/incidents")
 
     # TODO - ADD OTHER BLUEPRINTS
 
