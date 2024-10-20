@@ -3,6 +3,7 @@ import utils
 import pandas as pd
 import re
 import numpy as np
+import os
 
 
 def get_db_connexion():
@@ -227,7 +228,7 @@ def populate_database(cursor, conn, csv_file_name):
         df = populate_new_table(cursor, df, ["Victims", "Category"], "victim", "Victims")
 
 
-        df.loc[:, ["Date", "Title", "Type", "Attackers confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace")
+        df.loc[:, ["Date", "Title", "Type", "Attackers confirmed", "group_attackers", "username_agents", "response", "victim"]].to_sql("Attacks", con=conn, if_exists="replace", index_label='id_attack')
 
         conn.commit()
         return True
@@ -302,6 +303,7 @@ def init_database():
     and populating it.
     """
     try:
+        os.remove("data/incidents.db")
         conn = get_db_connexion()
 
         # The cursor is used to execute queries to the database.

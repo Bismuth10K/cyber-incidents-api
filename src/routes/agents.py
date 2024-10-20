@@ -56,8 +56,18 @@ def get_agent(agent_username):
                 is not in the database
         500 if an error occured while fetching the agent
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    conn = get_db_connexion()
+    cursor = conn.cursor()
+
+    agent = db.agents.get_agent(agent_username, cursor)
+    print(agent)
+    if agent == None:
+        conn.rollback()
+        close_db_connexion(cursor, conn)
+        return "Error: while fetching agents", 500
+    conn.commit()
+    close_db_connexion(cursor, conn)
+    return jsonify({"Agent": agent})
 
 
 @agents_bp.route("/<agent_username>", methods=["PATCH"])
@@ -83,8 +93,21 @@ def patch_password(agent_username):
          404 if no password is provided in the request
          500 if an error occured while updating the password
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        new_password = request.json.get('password')
+        if not new_password:
+            return jsonify({"message": "Password not provided"}), 404
+
+        with db.cursor() as cursor:
+            result = db.agents.update_password(agent_username, new_password, cursor)
+
+        if result:
+            return jsonify(result), 200
+        else:
+            return jsonify({"message": "Agent not found"}), 404
+
+    except Exception as e:
+        return jsonify({"message": f"Error: while updating password - {str(e)}"}), 500
 
 
 @agents_bp.route("/", methods=["POST"])
@@ -105,5 +128,22 @@ def add_agent():
         404 if no username and password are provided in the request
         500 if an error occured while updating the password
     """
-    # TODO
-    return jsonify({"message": "TODO"})
+    try:
+        username = request.json.get('username')
+        password = request.json.get('password')
+
+        if not username or not password:
+            return jsonify({"message": "Username or password not provided"}), 404
+
+        agent = {
+            "username": username,
+            "password": password
+        }
+
+        with db.cursor() as cursor:
+            db.agents.insert_agent(agent, cursor)
+
+        return jsonify({"message": "Done"}), 200
+
+    except Exception as e:
+        return jsonify({"message": f"Error: while adding a new agent - {str(e)}"}), 500

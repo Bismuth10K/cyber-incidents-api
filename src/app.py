@@ -4,6 +4,8 @@ from db import init_database
 
 from routes.agents import agents_bp
 
+from test_agents import test_insert_agent
+
 
 def create_app():
     """Create a Flask application and add blueprints with all routes.
@@ -30,4 +32,5 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
     init_database()
+    test_insert_agent()
     app.run(port=5000, debug=False)

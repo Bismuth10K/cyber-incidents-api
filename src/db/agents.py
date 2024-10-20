@@ -67,10 +67,14 @@ def get_agent(username, cursor):
 
         agent = cursor.fetchone()
 
-        query_get_incidents = "SELECT id FROM Incident WHERE agent_username = ?"
+
+        query_get_incidents = "SELECT id_attack FROM Attacks WHERE username_agents = ?"
         cursor.execute(query_get_incidents, [username])
 
         incidents = cursor.fetchall()
+
+        if not agent:
+            return "Error: No agent goig by this name", 404
 
     except sqlite3.IntegrityError as error:
         print(f"An integrity error occurred while fetching the agent: {error}")
