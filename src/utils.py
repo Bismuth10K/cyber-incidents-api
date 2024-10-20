@@ -1,4 +1,4 @@
-# import bcrypt
+import bcrypt
 # import jwt
 # import datetime
 import configparser
@@ -45,7 +45,13 @@ def hash_password(plain_password):
     hashed_password
         A password hash
     """
-    return
+    if isinstance(password, str):
+        password = password.encode('utf-8')
+    
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password, salt)
+    
+    return hashed_password
 
 
 def check_password(plain_password, hashed_password):
@@ -63,8 +69,9 @@ def check_password(plain_password, hashed_password):
     bool
         True if hashed_password is the hash of plain_password, False otherwise
     """
-    # TODO
-    return False
+    if isinstance(plain_password, str):
+        plain_password = plain_password.encode('utf-8')
+    return bcrypt.checkpw(plain_password, hashed_password)
 
 
 def check_agent(username, plain_password):
@@ -82,11 +89,12 @@ def check_agent(username, plain_password):
     bool
         True if the password is associated to the agent, False otherwise
     """
-    # TODO - Get the agent and check it exists
+    conn = db.get_db_connexion()
+    cursor = conn.cursor()
+    res = get_agent(username)
+    db.close_db_connexion(cursor, conn)
 
-    # TODO - Check the password provided
-
-    return False
+    return check_password(plain_password, res["password"])
 
 
 def generate_token(username):
